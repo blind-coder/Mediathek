@@ -71,12 +71,12 @@ class SimpleXbmcGui(object):
         if displayObject.isPlayable:
             if displayObject.isPlayable == "PlayList":
                 link = displayObject.link[0]
-                url = "%s?type=%s&action=openPlayList&link=%s" % (sys.argv[0], mediathek.name(), urllib.parse.quote_plus(link.basePath))
+                url = "%s?type=%s&action=openPlayList&link=%s" % (sys.argv[0], mediathek.name(), urllib.quote_plus(link.basePath))
                 listItem.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listItem, False, objectCount)
             elif displayObject.isPlayable == "JsonLink":
                 link = displayObject.link
-                url = "%s?type=%s&action=openJsonLink&link=%s" % (sys.argv[0], mediathek.name(), urllib.parse.quote_plus(link))
+                url = "%s?type=%s&action=openJsonLink&link=%s" % (sys.argv[0], mediathek.name(), urllib.quote_plus(link))
                 listItem.setProperty('IsPlayable', 'true')
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listItem, False, objectCount)
             else:
@@ -90,9 +90,9 @@ class SimpleXbmcGui(object):
         else:
             listItem.setIsFolder(True)
             try:
-                url = "%s?type=%s&action=openTopicPage&link=%s" % (sys.argv[0], mediathek.name(), urllib.parse.quote_plus(displayObject.link))
+                url = "%s?type=%s&action=openTopicPage&link=%s" % (sys.argv[0], mediathek.name(), urllib.quote_plus(displayObject.link))
             except:
-                url = "%s?type=%s&action=openTopicPage&link=%s" % (sys.argv[0], mediathek.name(), urllib.parse.quote_plus(displayObject.link.encode('utf-8')))
+                url = "%s?type=%s&action=openTopicPage&link=%s" % (sys.argv[0], mediathek.name(), urllib.quote_plus(displayObject.link.encode('utf-8')))
             xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listItem, True, objectCount)
 
     def BuildMetaData(self, displayObject):
@@ -200,11 +200,11 @@ class SimpleXbmcGui(object):
             mediathek = factory.getMediathek(mediathekName, self)
 
             if action == "openTopicPage":
-                link = urllib.parse.unquote_plus(params.get("link", ""))
+                link = urllib.unquote_plus(params.get("link", ""))
                 self.log(link)
                 mediathek.buildPageMenu(link, 0)
             elif action == "openPlayList":
-                link = urllib.parse.unquote_plus(params.get("link", ""))
+                link = urllib.unquote_plus(params.get("link", ""))
                 self.log(link)
                 remotePlaylist = mediathek.loadPage(link)
                 self.playPlaylist(remotePlaylist)
@@ -223,7 +223,7 @@ class SimpleXbmcGui(object):
                 callhash = params.get("callhash", "0")
                 mediathek.buildJsonMenu(path, callhash, 0)
             elif action == "openJsonLink":
-                link = urllib.parse.unquote_plus(params.get("link", ""))
+                link = urllib.unquote_plus(params.get("link", ""))
                 mediathek.playVideoFromJsonLink(link)
             else:
                 if mediathek.isSearchable():

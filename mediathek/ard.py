@@ -134,8 +134,8 @@ class ARDMediathek(Mediathek):
         pageSize = paginationContent["pageSize"]
         pageNumber = paginationContent["pageNumber"]
 
-        variables = urllib.parse.quote_plus(self.variables % (widgetId, client, pageNumber, pageSize))
-        extension = urllib.parse.quote_plus(self.extension)
+        variables = urllib.quote_plus(self.variables % (widgetId, client, pageNumber, pageSize))
+        extension = urllib.quote_plus(self.extension)
         return self.publicGateway % (variables, extension)
 
     def buildJsonMenu(self, path, callhash, initCount):
