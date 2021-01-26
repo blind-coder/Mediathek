@@ -26,7 +26,7 @@ from mediathek import *
 class KIKA(Mediathek):
     def __init__(self, simpleXbmcGui):
         self.gui = simpleXbmcGui
-        self.rootLink = "http://www.kika.de"
+        self.rootLink = "https://www.kika.de"
         self.menuTree = (
             TreeNode("0", "Videos", self.rootLink + "/videos/index.html", True),
             TreeNode("1", "Sendungen von A-Z", "", False,
@@ -56,9 +56,9 @@ class KIKA(Mediathek):
                          TreeNode("1.22", "W", self.rootLink + "/sendungen/sendungenabisz100_page-W_zc-25c5c777.html", True),
                          TreeNode("1.23", "Y", self.rootLink + "/sendungen/sendungenabisz100_page-Y_zc-388beba7.html", True),
                          TreeNode("1.24", "Z", self.rootLink + "/sendungen/sendungenabisz100_page-Z_zc-e744950d.html", True),
-                         TreeNode("1.25", "...", self.rootLink + "/sendungen/sendungenabisz100_page-1_zc-43c28d56.html", True)
+                         TreeNode("1.25", "0-9", self.rootLink + "/sendungen/sendungenabisz100_page-1_zc-43c28d56.html", True)
                      )
-                     )
+            )
         )
 
         self.regex_videoLinks = re.compile("<a href=\"(.*?/videos/video\\d+?)\\.html\"")
@@ -88,14 +88,25 @@ class KIKA(Mediathek):
 
     def buildVideoLink(self, pageLink):
         self.gui.log("Entering buildVideoLink")
+        try:
+            self.gui.log("Loading %s%s" % (self.rootLink, pageLink.encode("latin-1")))
+        except:
+            self.gui.log("Loading <unicode>")
         xmlPage = self.loadPage(self.rootLink + pageLink)
+        self.gui.log("Matching against %s" % (self.regex_xml_channel.pattern))
         channel = self.regex_xml_channel.search(xmlPage)
         if channel is not None:
             channel = channel.group(1)
+        self.gui.log("Matching against %s" % (self.regex_xml_title.pattern))
         title = self.regex_xml_title.search(xmlPage).group(1)
+        self.gui.log("Matching against %s" % (self.regex_xml_image.pattern))
         image = self.regex_xml_image.search(xmlPage).group(1).replace("**aspectRatio**", "tlarge169").replace("**width**", "1472")
-
+        try:
+            self.gui.log("Found title %s with image %s" % (title.encode("latin-1"), image.encode("latin-1")))
+        except:
+            self.gui.log("Found title <unicode> with image <unicode>")
         links = {}
+        self.gui.log("Matching against %s" % (self.regex_xml_videoLink.pattern))
         for match in self.regex_xml_videoLink.finditer(xmlPage):
             profile = match.group(1)
             directLink = match.group(2)
@@ -109,6 +120,11 @@ class KIKA(Mediathek):
                 links[3] = SimpleLink(directLink, 0)
 
         date = time.strptime(self.regex_xml_time.search(xmlPage).group(1), u"%d.%m.%Y %H:%M")
+        try:
+            self.gui.log("Return value: Title %s Image %s date %s" % (title.encode("latin-1"), image.encode("latin-1"), date.encode("latin-1")))
+        except:
+            self.gui.log("Return value: <unicode>")
+        self.gui.log("Leaving buildVideoLink")
         if channel is not None:
             return DisplayObject(channel, title, image, "", links, True, date)
         else:
@@ -117,17 +133,25 @@ class KIKA(Mediathek):
     def buildPageMenu(self, link, initCount):
         self.gui.log("Entering buildPageMenu")
         videoLinks = set()
+        try:
+            self.gui.log("Loading %s" % (link.encode("latin-1")))
+        except:
+            self.gui.log("Loading <unicode>")
         pageContent = self.loadPage(link)
         htmlPage = BeautifulSoup(pageContent, 'html.parser')
 
+        self.gui.log("Matching against %s" % (self.selector_videoPages))
         htmlElements = htmlPage.select(self.selector_videoPages)
         self.gui.log("found %d htmlElements" % len(htmlElements))
         self.extractConfigLinks(videoLinks, pageContent)
         self.extractVideoLinks(videoLinks, htmlElements)
+        self.gui.log("found %d videoLinks" % (len(videoLinks)))
 
         if len(videoLinks) == 0:
+            self.gui.log("Matching against %s" % (self.selector_allVideoPage))
             htmlElements = htmlPage.select(self.selector_allVideoPage)
             self.extractVideoLinks(videoLinks, htmlElements)
+            self.gui.log("found %d videoLinks" % len(videoLinks))
         count = initCount + len(videoLinks)
 
         self.extractSubFolders(htmlPage, count)
@@ -136,32 +160,46 @@ class KIKA(Mediathek):
             displayObject = self.buildVideoLink(link)
             displayObjects.add(displayObject)
         displayObjects_sorted = sorted(displayObjects, key=lambda displayObject: displayObject.date)
-        self.gui.log("found %d display obj " % len(displayObjects))
+        self.gui.log("found %d displayObjects" % len(displayObjects))
         for displayObject in displayObjects_sorted:
             self.gui.buildVideoLink(displayObject, self, count)
+        self.gui.log("Leaving buildPageMenu")
 
     def extractVideoLinks(self, videoLinks, htmlElements):
         self.gui.log("Entering extractVideoLinks")
         for item in htmlElements:
             link = self.rootLink + item['href']
+            try:
+                self.gui.log("Loading %s" % link.encode("latin-1"))
+            except:
+                self.gui.log("Loading <unicode>")
             videoPage = self.loadPage(link)
+            self.gui.log("Matching against %s" % (self.regex_videoLinks.pattern))
             for match in self.regex_videoLinks.finditer(videoPage):
                 link = match.group(1) + "-avCustom.xml"
+                try:
+                    self.gui.log("Found %s" % link.encode("latin-1"))
+                except:
+                    self.gui.log("Found <unicode>")
                 if link not in videoLinks:
                     videoLinks.add(link)
         self.gui.log("found %d video links" % len(videoLinks))
+        self.gui.log("Leaving extractVideoLinks")
 
     def extractConfigLinks(self, videoLinks, pageContent):
         self.gui.log("Entering extractConfigLinks")
+        self.gui.log("Matching pageContent against %s" % (self.regex_configLinks.pattern))
         directLinks = list(self.regex_configLinks.finditer(pageContent))
         for match in directLinks:
             link = match.group(1)
             if link not in videoLinks:
                 videoLinks.add(link)
         self.gui.log("found %d config links" % len(videoLinks))
+        self.gui.log("Leaving extractConfigLinks")
 
     def extractSubFolders(self, htmlPage, initCount):
         self.gui.log("Entering extractSubFolders")
+        self.gui.log("Matching htmlPage against %s and %s" % (self.selector_seriesPages, self.selector_allVideoPage))
         htmlElements = htmlPage.select(self.selector_seriesPages) + htmlPage.select(self.selector_allVideoPage)
         self.gui.log("found %d page links" % len(htmlElements))
         count = initCount + len(htmlElements)
@@ -175,9 +213,22 @@ class KIKA(Mediathek):
                 continue
             if title == "":
                 continue
+            try:
+                self.gui.log("Found title 'Alle Videos', '%s', link: '%s'" % (title.encode("latin-1"), link.encode("latin-1")))
+            except:
+                self.gui.log("Found title 'Alle Videos', <unicode>")
             displayObject = DisplayObject("Alle Videos", title, "", "", link, False)
             displayObjects.add(displayObject)
-        displayObjects_sorted = sorted(displayObjects, key=lambda displayObject: displayObject.title)
+        displayObjects_sorted = sorted(displayObjects, key=lambda displayObject: displayObject.subTitle)
+        displayObjects_processed = set()
         for displayObject in displayObjects_sorted:
+            if displayObject.subTitle+displayObject.link in displayObjects_processed:
+                try:
+                    self.gui.log("Skipping duplicate %s - %s - %s" % (displayObject.title.encode("latin-1"), displayObject.subTitle.encode("latin-1"), displayObject.link.encode("latin-1")))
+                except:
+                    self.gui.log("Skipping duplicate <unicode>")
+                continue
+            displayObjects_processed.add(displayObject.subTitle+displayObject.link)
             self.gui.buildVideoLink(displayObject, self, count)
+        self.gui.log("Leaving extractSubFolders with return value %d" % count)
         return count

@@ -88,7 +88,10 @@ class SimpleXbmcGui(object):
                   listItem.setProperty('IsPlayable', 'true')
                   xbmcplugin.addDirectoryItem(int(sys.argv[1]), link.basePath, listItem, False, objectCount)
         else:
-            listItem.setIsFolder(True)
+            try:
+                listItem.setIsFolder(True)
+            except:
+                self.gui.log("listItem.setIsFolder(true) failed")
             try:
                 url = "%s?type=%s&action=openTopicPage&link=%s" % (sys.argv[0], mediathek.name(), urllib.quote_plus(displayObject.link))
             except:
