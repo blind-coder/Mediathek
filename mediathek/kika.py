@@ -63,7 +63,7 @@ class KIKA(Mediathek):
 
         self.regex_videoLinks = re.compile("<a href=\"(.*?/videos/video\\d+?)\\.html\"")
         self.regex_allVideosLinks = re.compile("<a href=\"(.*?/sendungen/allevideos.*?\\.html)\"")
-        self.regex_configLinks = re.compile("\\{dataURL:'https{0,1}:\\/\\/www\\.kika\\.de(\\/.*?-avCustom.*\\.xml)'\\}")
+        self.regex_configLinks = re.compile("{dataURL:'https{0,1}:\\/\\/www\\.kika\\.de(\\/.*?-avCustom.*\\.xml)'}")
         self.selector_allVideoPage = "div.mod > div.boxCon > div.box > div.teaser > a.linkAll"
         self.selector_videoPages = "div.mod > div.box > div.teaser > a.linkAll"
         self.selector_seriesPages = "div.modCon > div.mod > div.boxCon > div.boxBroadcastSeries > div.teaser > a.linkAll"
@@ -87,6 +87,7 @@ class KIKA(Mediathek):
         return
 
     def buildVideoLink(self, pageLink):
+        self.gui.log("Entering buildVideoLink")
         xmlPage = self.loadPage(self.rootLink + pageLink)
         channel = self.regex_xml_channel.search(xmlPage)
         if channel is not None:
@@ -94,19 +95,17 @@ class KIKA(Mediathek):
         title = self.regex_xml_title.search(xmlPage).group(1)
         image = self.regex_xml_image.search(xmlPage).group(1).replace("**aspectRatio**", "tlarge169").replace("**width**", "1472")
 
-        self.gui.log("%s %s" % (title, image))
         links = {}
         for match in self.regex_xml_videoLink.finditer(xmlPage):
             profile = match.group(1)
             directLink = match.group(2)
-            #self.gui.log("%s %s"%(profile,directLink))
-            if "MP4 Web S" in profile:
+            if " Web S" in profile:
                 links[0] = SimpleLink(directLink, 0)
-            if "MP4 Web L" in profile:
+            if " Web L" in profile:
                 links[1] = SimpleLink(directLink, 0)
-            if "MP4 Web L+" in profile:
+            if " Web L+" in profile:
                 links[2] = SimpleLink(directLink, 0)
-            if "MP4 Web XL" in profile:
+            if " Web XL" in profile:
                 links[3] = SimpleLink(directLink, 0)
 
         date = time.strptime(self.regex_xml_time.search(xmlPage).group(1), u"%d.%m.%Y %H:%M")
@@ -116,6 +115,7 @@ class KIKA(Mediathek):
             return DisplayObject(title, "", image, "", links, True, date)
 
     def buildPageMenu(self, link, initCount):
+        self.gui.log("Entering buildPageMenu")
         videoLinks = set()
         pageContent = self.loadPage(link)
         htmlPage = BeautifulSoup(pageContent, 'html.parser')
@@ -141,6 +141,7 @@ class KIKA(Mediathek):
             self.gui.buildVideoLink(displayObject, self, count)
 
     def extractVideoLinks(self, videoLinks, htmlElements):
+        self.gui.log("Entering extractVideoLinks")
         for item in htmlElements:
             link = self.rootLink + item['href']
             videoPage = self.loadPage(link)
@@ -151,6 +152,7 @@ class KIKA(Mediathek):
         self.gui.log("found %d video links" % len(videoLinks))
 
     def extractConfigLinks(self, videoLinks, pageContent):
+        self.gui.log("Entering extractConfigLinks")
         directLinks = list(self.regex_configLinks.finditer(pageContent))
         for match in directLinks:
             link = match.group(1)
@@ -159,6 +161,7 @@ class KIKA(Mediathek):
         self.gui.log("found %d config links" % len(videoLinks))
 
     def extractSubFolders(self, htmlPage, initCount):
+        self.gui.log("Entering extractSubFolders")
         htmlElements = htmlPage.select(self.selector_seriesPages) + htmlPage.select(self.selector_allVideoPage)
         self.gui.log("found %d page links" % len(htmlElements))
         count = initCount + len(htmlElements)
