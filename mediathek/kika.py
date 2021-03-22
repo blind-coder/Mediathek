@@ -65,7 +65,8 @@ class KIKA(Mediathek):
         self.regex_allVideosLinks = re.compile("<a href=\"(.*?/sendungen/allevideos.*?\\.html)\"")
         self.regex_configLinks = re.compile("{dataURL:'https{0,1}:\\/\\/www\\.kika\\.de(\\/.*?-avCustom.*\\.xml)'}")
         self.selector_allVideoPage = "div.mod > div.boxCon > div.box > div.teaser > a.linkAll"
-        self.selector_videoPages = "div.mod > div.box > div.teaser > a.linkAll"
+        # self.selector_videoPages = "div.mod > div.box > div.teaser > a.linkAll"
+        self.selector_videoPages = "div.box > div.teaser > a.linkAll"
         self.selector_seriesPages = "div.modCon > div.mod > div.boxCon > div.boxBroadcastSeries > div.teaser > a.linkAll"
         self.regex_xml_channel = re.compile("<channelName>(.*?)</channelName>")
         self.regex_xml_title = re.compile("<title>(.*?)</title>")
@@ -173,7 +174,10 @@ class KIKA(Mediathek):
                 self.gui.log("Loading %s" % link.encode("latin-1"))
             except:
                 self.gui.log("Loading <unicode>")
-            videoPage = self.loadPage(link)
+            try:
+                videoPage = self.loadPage(link)
+            except:
+                videoPage = ""
             self.gui.log("Matching against %s" % (self.regex_videoLinks.pattern))
             for match in self.regex_videoLinks.finditer(videoPage):
                 link = match.group(1) + "-avCustom.xml"
